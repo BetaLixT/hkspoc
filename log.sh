@@ -12,6 +12,16 @@ sudo swapoff –a
 sudo systemctl enable --now kubelet
 
 # Master node
-sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+sudo kubeadm init --apiserver-advertise-address $externalIPv4 --apiserver-cert-extra-sans $privateIP,$externalIPv4 --control-plane-endpoint $privateIP --pod-network-cidr=10.244.0.0/16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+# after worker and other controllers have been setup 
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.14.0/Documentation/kube-flannel.yml
+kubectl -n kube-system patch ds kube-flannel-ds --type json -p '[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"node.cloudprovider.kubernetes.io/uninitialized","value":"true","effect":"NoSchedule"}}]'
+
+# Setup Hetzner Cloud Controller Manager
+# Generate hetzner API token 
+# Get network tag
+kubectl -n kube-system create secret generic hcloud --from-literal=token=<hcloud API token> --from-literal=network=<hcloud Network_ID_or_Name>
+kubectl apply -f https://github.com/hetznercloud/hcloud-cloud-controller-manager/releases/latest/download/ccm-networks.yaml

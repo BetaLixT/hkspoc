@@ -10,9 +10,10 @@ sudo apt-get install -y kubeadm kubelet kubectl
 sudo apt-mark hold kubeadm kubelet kubectl
 sudo swapoff –a
 sudo systemctl enable --now kubelet
+sudo printf "[Service]\nEnvironment=\"KUBELET_EXTRA_ARGS=--cloud-provider=external\"\n" > /etc/systemd/system/kubelet.service.d/20-hcloud.conf
 
 # Master node
-sudo printf "[Service]\nEnvironment=\"KUBELET_EXTRA_ARGS=--cloud-provider=external\"\n" > /etc/systemd/system/kubelet.service.d/20-hcloud.conf
+
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
